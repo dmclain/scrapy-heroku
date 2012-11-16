@@ -1,14 +1,27 @@
 import psycopg2
 import cPickle
 import json
+import urlparse
 from zope.interface import implements
 
 from scrapyd.interfaces import ISpiderQueue
 
 
 class Psycopg2PriorityQueue(object):
-    def __init__(self, table='scrapy_queue', **kwargs):
-        conn_string = ' '.join('%s=%s' % item for item in kwargs.items())
+    def __init__(self, config, table='scrapy_queue'):
+        url = urlparse.urlparse(config.get('database_url'))
+        # Remove query strings.
+        path = url.path[1:]
+        path = path.split('?', 2)[0]
+
+        args = {
+            'dbname': path,
+            'user': url.username,
+            'password': url.password,
+            'host': url.hostname,
+            'port': url.port,
+        }
+        conn_string = ' '.join('%s=%s' % item for item in args.items())
         self.table = table
         self.conn = psycopg2.connect(conn_string)
         q = "create table if not exists %s " \
@@ -98,8 +111,8 @@ class JsonPsycopg2PriorityQueue(Psycopg2PriorityQueue):
 class Psycopg2SpiderQueue(object):
     implements(ISpiderQueue)
 
-    def __init__(self, table='spider_queue', **kwargs):
-        self.q = JsonPsycopg2PriorityQueue(table, **kwargs)
+    def __init__(self, config, table='spider_queue'):
+        self.q = JsonPsycopg2PriorityQueue(config, table)
 
     def add(self, name, **spider_args):
         d = spider_args.copy()

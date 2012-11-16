@@ -2,16 +2,14 @@ from zope.interface import implements
 
 from scrapyd.interfaces import ISpiderScheduler
 
-from .spiderqueue import Psycopg2SpiderQueue
-from .utils import get_project_list
+from .utils import get_spider_queues
 
 
 class Psycopg2SpiderScheduler(object):
     implements(ISpiderScheduler)
 
-    def __init__(self, config, **pg_args):
+    def __init__(self, config):
         self.config = config
-        self.pg_args = pg_args
         self.update_projects()
 
     def schedule(self, project, spider_name, **spider_args):
@@ -22,7 +20,4 @@ class Psycopg2SpiderScheduler(object):
         return self.queues.keys()
 
     def update_projects(self):
-        self.queues = {}
-        for project in get_project_list(self.config):
-            table = 'scrapy_%s_queue' % project
-            self.queues[project] = Psycopg2SpiderQueue(table, **self.pg_args)
+        self.queues = get_spider_queues(self.config)

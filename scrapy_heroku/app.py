@@ -1,5 +1,4 @@
 from os import environ
-import urlparse
 
 from twisted.application.service import Application
 from twisted.application.internet import TimerService, TCPServer
@@ -10,33 +9,21 @@ from scrapyd.interfaces import (IEggStorage, IPoller, ISpiderScheduler,
     IEnvironment)
 from scrapyd.launcher import Launcher
 from scrapyd.eggstorage import FilesystemEggStorage
-from scrapyd.poller import QueuePoller
 from scrapyd.environ import Environment
 from scrapyd.website import Root
 
 from .scheduler import Psycopg2SpiderScheduler
+from .poller import Psycopg2QueuePoller
 
 
 def application(config):
     app = Application("Scrapyd")
-    http_port = environ.get('PORT', config.getint('http_port', 6800))
-    url = urlparse.urlparse(environ.get('DATABASE_URL'))
+    http_port = int(environ.get('PORT', config.getint('http_port', 6800)))
+    config.cp.set('scrapyd', 'database_url', environ.get('DATABASE_URL'))
 
-    # Remove query strings.
-    path = url.path[1:]
-    path = path.split('?', 2)[0]
-
-    args = {
-        'dbname': path,
-        'user': url.username,
-        'password': url.password,
-        'host': url.hostname,
-        'port': url.port,
-    }
-
-    poller = QueuePoller(config)
+    poller = Psycopg2QueuePoller(config)
     eggstorage = FilesystemEggStorage(config)
-    scheduler = Psycopg2SpiderScheduler(config, **args)
+    scheduler = Psycopg2SpiderScheduler(config)
     environment = Environment(config)
 
     app.setComponent(IPoller, poller)
