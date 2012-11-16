@@ -5,3 +5,5 @@ cover
 *.espressostorage
 *.egg
 *.egg-info
+build
+dist
