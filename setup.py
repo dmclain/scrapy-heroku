@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'distribute',
         'scrapy',
+        'psycopg2',
     ],
     setup_requires=[
         'versiontools >= 1.8',
