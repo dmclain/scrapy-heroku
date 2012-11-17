@@ -35,18 +35,21 @@ class Psycopg2PriorityQueue(object):
         cursor = self.conn.cursor()
         cursor.execute(q, args)
         if results:
-            results = cursor.fetchall()
+            try:
+                results = list(cursor)
+            except psycopg2.ProgrammingError:
+                results = []
         cursor.close()
         return results
 
     def put(self, message, priority=0.0):
         args = (priority, self.encode(message))
         q = "insert into %s (priority, message) values (%%s,%%s);" % self.table
-        self._execute(q, args)
+        self._execute(q, args, results=False)
         self.conn.commit()
 
     def pop(self):
-        q = "select for update id, message from %s order by priority desc limit 1;" \
+        q = "select id, message from %s order by priority desc limit 1 for update;" \
             % self.table
         results = self._execute(q)
         if len(results) == 0:
@@ -61,7 +64,7 @@ class Psycopg2PriorityQueue(object):
         return self.decode(msg)
 
     def remove(self, func):
-        q = "select for update id, message from %s" % self.table
+        q = "select id, message from %s for update" % self.table
         n = 0
         for mid, msg in self.conn.execute(q):
             if func(self.decode(msg)):
