@@ -41,7 +41,7 @@ class Psycopg2PriorityQueue(object):
 
     def put(self, message, priority=0.0):
         args = (priority, self.encode(message))
-        q = "insert into %s (priority, message) values (?,?);" % self.table
+        q = "insert into %s (priority, message) values (%%s,%%s);" % self.table
         self._execute(q, args)
 
     def pop(self):
@@ -51,7 +51,7 @@ class Psycopg2PriorityQueue(object):
         if len(results) == 0:
             return
         mid, msg = results[0]
-        q = "delete from %s where id=?;" % self.table
+        q = "delete from %s where id=%%s;" % self.table
         results = self._execute(q, (mid,), results=False)
         if not results:  # record vanished, so let's try again
             self.conn.rollback()
@@ -64,7 +64,7 @@ class Psycopg2PriorityQueue(object):
         n = 0
         for mid, msg in self.conn.execute(q):
             if func(self.decode(msg)):
-                q = "delete from %s where id=?" % self.table
+                q = "delete from %s where id=%%s" % self.table
                 c = self._execute(q, (mid,), results=False)
                 if not c:  # record vanished, so let's try again
                     self.conn.rollback()
