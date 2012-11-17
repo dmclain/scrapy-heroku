@@ -29,11 +29,11 @@ class Psycopg2PriorityQueue(object):
             " priority real, " \
             " message text);" % table
         self._execute(q, results=False)
+        self.conn.commit()
 
     def _execute(self, q, args=None, results=True):
         cursor = self.conn.cursor()
         cursor.execute(q, args)
-        self.conn.commit()
         if results:
             results = cursor.fetchall()
         cursor.close()
@@ -43,6 +43,7 @@ class Psycopg2PriorityQueue(object):
         args = (priority, self.encode(message))
         q = "insert into %s (priority, message) values (%%s,%%s);" % self.table
         self._execute(q, args)
+        self.conn.commit()
 
     def pop(self):
         q = "select for update id, message from %s order by priority desc limit 1;" \
@@ -75,15 +76,20 @@ class Psycopg2PriorityQueue(object):
 
     def clear(self):
         self._execute("delete from %s" % self.table, results=False)
+        self.conn.commit()
 
     def __len__(self):
         q = "select count(*) from %s" % self.table
-        return self._execute(q)[0][0]
+        result = self._execute(q)[0][0]
+        self.conn.commit()
+        return result
 
     def __iter__(self):
         q = "select message, priority from %s order by priority desc" % \
             self.table
-        return ((self.decode(x), y) for x, y in self._execute(q))
+        result = ((self.decode(x), y) for x, y in self._execute(q))
+        self.conn.commit()
+        return result
 
     def encode(self, obj):
         return obj
