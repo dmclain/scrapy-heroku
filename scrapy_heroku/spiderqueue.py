@@ -56,10 +56,7 @@ class Psycopg2PriorityQueue(object):
             return
         mid, msg = results[0]
         q = "delete from %s where id=%%s;" % self.table
-        results = self._execute(q, (mid,), results=False)
-        if not results:  # record vanished, so let's try again
-            self.conn.rollback()
-            return self.pop()
+        self._execute(q, (mid,), results=False)
         self.conn.commit()
         return self.decode(msg)
 
@@ -69,10 +66,7 @@ class Psycopg2PriorityQueue(object):
         for mid, msg in self.conn.execute(q):
             if func(self.decode(msg)):
                 q = "delete from %s where id=%%s" % self.table
-                c = self._execute(q, (mid,), results=False)
-                if not c:  # record vanished, so let's try again
-                    self.conn.rollback()
-                    return self.remove(func)
+                self._execute(q, (mid,), results=False)
                 n += 1
         self.conn.commit()
         return n
