@@ -63,7 +63,7 @@ class Psycopg2PriorityQueue(object):
     def remove(self, func):
         q = "select id, message from %s for update" % self.table
         n = 0
-        for mid, msg in self.conn.execute(q):
+        for mid, msg in self._execute(q):
             if func(self.decode(msg)):
                 q = "delete from %s where id=%%s" % self.table
                 self._execute(q, (mid,), results=False)
