@@ -22,14 +22,24 @@ top level). Edit your scrapy.cfg to include the following::
     username = <A_USER_NAME>
     password = <A_PASSWORD>
 
-Add a requirements.txt file that includes ``scrapy-heroku`` in it. It is strongly
-recommended that you version pin scrapy-heroku as well as the version of scrapy that
-your project is developed against (pip freeze > requirements.txt). Finally create a
-Procfile that consists of::
+Add a requirements.txt file that includes ``scrapy``, ``scrapy-heroku``, and ``scrapyd``.
+It is strongly recommended that you version pin scrapy-heroku as well as the version of scrapy that
+your project is developed against (pip freeze > requirements.txt).
 
-    web: scrapy server
+For Example:
+```python
+# requirements.txt
+Scrapy==0.24.4
+scrapyd==1.0.1
+scrapy-heroku==0.7.1
+```
 
-Make sure you have a postgres database that has been promoted to DATABASE_URL
+Finally create a Procfile that consists of::
+
+```
+web: scrapyd
+```
+
 
 
 * Project page: <http://github.com/dmclain/scrapy-heroku>
