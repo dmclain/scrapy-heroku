@@ -38,7 +38,7 @@ class Psycopg2PriorityQueue(object):
         try:
             cursor = self.conn.cursor()
             cursor.execute(q, args)
-        except psycopg2.InterfaceError:
+        except (psycopg2.InterfaceError, psycopg2.OperationalError) as err:
             self.conn = psycopg2.connect(self.conn_string)
             cursor = self.conn.cursor()
             cursor.execute(q, args)
