@@ -21,7 +21,10 @@ class Psycopg2PriorityQueue(object):
             'host': url.hostname,
             'port': url.port,
         }
+
         conn_string = ' '.join('%s=%s' % item for item in args.items())
+
+        self.conn_string = conn_string
         self.table = table
         self.conn = psycopg2.connect(conn_string)
         q = "create table if not exists %s " \
@@ -32,14 +35,21 @@ class Psycopg2PriorityQueue(object):
         self.conn.commit()
 
     def _execute(self, q, args=None, results=True):
-        cursor = self.conn.cursor()
-        cursor.execute(q, args)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(q, args)
+        except (psycopg2.InterfaceError, psycopg2.OperationalError) as err:
+            self.conn = psycopg2.connect(self.conn_string)
+            cursor = self.conn.cursor()
+            cursor.execute(q, args)
+
         if results:
             try:
                 results = list(cursor)
             except psycopg2.ProgrammingError:
                 results = []
         cursor.close()
+
         return results
 
     def put(self, message, priority=0.0):
